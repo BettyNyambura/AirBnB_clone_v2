@@ -77,13 +77,14 @@ class TestDoCreate(unittest.TestCase):
         """Test create with escaped quotes in string"""
         with patch('sys.stdout', new=StringIO()) as fake_out:
             self.console.do_create(
-                    'User bio="Loves \\"coding\\" and hiking"'
+                    'User name="John \\"The Coder\\" Doe"'
             )
             output = fake_out.getvalue().strip()
             obj_key = f"User.{output}"
             self.assertIn(obj_key, storage.all())
             user = storage.all()[obj_key]
-            self.assertEqual(user.bio, 'Loves "coding" and hiking')
+            print(f"Attributes of created user: {user.__dict__}")
+            self.assertEqual(user.name, 'John "The Coder" Doe')
 
 
 if __name__ == '__main__':
