@@ -1,62 +1,65 @@
 #!/usr/bin/python3
-'''database storage engine'''
-
+"""database storage engine"""
+from os import getenv
+from models.base_model import Base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from models.amenity import Amenity
-from models.base_model import Base
+from sqlalchemy import text
+from models.user import User
+from models.state import State
 from models.city import City
+from models.amenity import Amenity
 from models.place import Place
 from models.review import Review
-from models.state import State
-from models.user import User
-from os import getenv
-
-if getenv('HBNB_TYPE_STORAGE') == 'db':
-    from models.place import place_amenity
-
-classes = {"User": User, "State": State, "City": City,
-           "Amenity": Amenity, "Place": Place, "Review": Review}
 
 
 class DBStorage:
-    '''database storage engine for mysql storage'''
     __engine = None
     __session = None
 
     def __init__(self):
-        '''instantiate new dbstorage instance'''
         HBNB_MYSQL_USER = getenv('HBNB_MYSQL_USER')
         HBNB_MYSQL_PWD = getenv('HBNB_MYSQL_PWD')
-        HBNB_MYSQL_HOST = getenv('HBNB_MYSQL_HOST')
+        HBNB_MYSQL_HOST = getenv('HBNB_MYSQL_HOST', default='localhost')
         HBNB_MYSQL_DB = getenv('HBNB_MYSQL_DB')
         HBNB_ENV = getenv('HBNB_ENV')
+
+        # self.__engine = create_engine({
+        #     'engine': 'mysql+mysqldb',
+        #     'user': HBNB_MYSQL_USER,
+        #     'password': HBNB_MYSQL_PWD,
+        #     'host': HBNB_MYSQL_HOST,
+        #     'database': HBNB_MYSQL_DB,
+        #     'pool_pre_ping': True
+        # })
         self.__engine = create_engine(
-            'mysql+mysqldb://{}:{}@{}/{}'.format(
-                HBNB_MYSQL_USER,
-                HBNB_MYSQL_PWD,
-                HBNB_MYSQL_HOST,
-                HBNB_MYSQL_DB
-            ), pool_pre_ping=True)
+            'mysql+mysqldb://' +
+            HBNB_MYSQL_USER +
+            ':' +
+            HBNB_MYSQL_PWD +
+            '@' +
+            HBNB_MYSQL_HOST +
+            '/' +
+            HBNB_MYSQL_DB)
 
         if HBNB_ENV == 'test':
-            Base.metadata.drop_all(self.__engine)
+            Base.metadata.drop_all(bind=self.__engine)
 
     def all(self, cls=None):
-        '''query on the current db session all cls objects'''
-        dct = {}
-        if cls is None:
-            for c in classes.values():
-                objs = self.__session.query(c).all()
-                for obj in objs:
-                    key = obj.__class__.__name__ + '.' + obj.id
-                    dct[key] = obj
+        classes = [User, State, City, Amenity, Place, Review]
+        objects = {}
+
+        if cls is not None:
+            if cls in classes:
+                return {obj.__class__.__name__ + '.' + obj.id:
+                        obj for obj in self.__session.query(cls).all()}
+            else:
+                return {}
         else:
-            objs = self.__session.query(cls).all()
-            for obj in objs:
-                key = obj.__class__.__name__ + '.' + obj.id
-                dct[key] = obj
-        return dct
+            for c in classes:
+                for obj in self.__session.query(text(c.__name__)).all():
+                    objects[obj.__class__.__name__ + '.' + obj.id] = obj
+            return objects
 
     def new(self, obj):
         '''adds the obj to the current db session'''
@@ -89,5 +92,5 @@ class DBStorage:
         self.__session = scoped_session(session_factory)()
 
     def close(self):
-	"""closes the working SQLAlchemy session"""
+        """closes the working SQLAlchemy session"""
         self.__session.close()
