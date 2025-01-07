@@ -5,6 +5,19 @@ from sqlalchemy import Column, String, Integer, Float, ForeignKey
 from sqlalchemy.orm import relationship
 
 
+# Linking table for Many-to-Many relationship between Place and Amenity
+place_amenity = Table(
+    'place_amenity', Base.metadata,
+    Column(
+        'place_id', String(60), ForeignKey('places.id'),
+        primary_key=True, nullable=False
+    ),
+    Column(
+        'amenity_id', String(60), ForeignKey('amenities.id'),
+        primary_key=True, nullable=False
+    )
+)
+
 class Place(BaseModel, Base):
     """ A place to stay """
     __tablename__ = 'places'
@@ -24,3 +37,21 @@ class Place(BaseModel, Base):
     reviews = relationship(
         "Review", backref="place", cascade="all, delete, delete-orphan"
     )
+
+     # DBStorage relationship
+    amenities = relationship(
+        "Amenity", secondary=place_amenity, viewonly=False
+    )
+
+    # For FileStorage, the getter and setter for amenities are added below
+    @property
+    def amenities(self):
+        return [
+            models.storage.get(Amenity, amenity_id)
+            for amenity_id in self.amenity_ids
+        ]
+
+    @amenities.setter
+    def amenities(self, obj):
+        if isinstance(obj, Amenity):
+            self.amenity_ids.append(obj.id)
