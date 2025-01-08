@@ -2,6 +2,8 @@
 """This module defines a class to manage file storage for hbnb clone"""
 from datetime import datetime
 import json
+import os
+from importlib import import_module
 from models.base_model import BaseModel
 from models.user import User
 from models.place import Place
