@@ -66,5 +66,5 @@ class FileStorage:
         """delete an object"""
         if obj is not None:
             key = obj.__class__.__name__+'.'+obj.id
-            if key in self.__objects:
-                del self.__objects[key]
+            if key in Filestorage.__objects:
+                del Filestorage.__objects[key]
