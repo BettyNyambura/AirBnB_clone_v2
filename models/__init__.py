@@ -3,9 +3,9 @@
 
 from os import getenv
 
-storage_t = getenv('HBNB_TYPE_STORAGE', 'file')
+storage_time = getenv('HBNB_TYPE_STORAGE', 'file')
 
-if storage_t == 'db':
+if storage_time == 'db':
     from models.engine.db_storage import DBStorage
     storage = DBStorage()
 else:
